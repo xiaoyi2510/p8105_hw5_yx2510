@@ -7,6 +7,7 @@ output: github_document
 Load the packages 
 ```{r}
 library(tidyverse)
+library(ggplot2)
 ```
 ## Problem one:
 Read the file:
@@ -55,3 +56,28 @@ my_tidy_data %>%
 ```
 
 Comment: The week-one value ranged from 0.0 to 2.5. A slightly wider range was observed in the experiment group which fell between -1.0 to 3.725. However, the value in the control arm fluctuated arond this range for the following 8 weeks. Meanwhile, an overall increasing trend can be observed for the experimental group.
+
+
+## Problem 2:
+1. read the data and create city_state variable
+```{r}
+homicide_data = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>%
+        unite(col = "city_state", city:state, sep = ", ", remove = FALSE)
+```
+The data contains 'r nrow(homicide_data)' and 'r ncol(homicide_data)'. Variables include name, race, age and sex of victims, city, state and location of crime, and also disposition of cases. 
+
+2. summarize within cities to obtain the total number of homicides and the number of unsolved homicides
+```{r}
+homicide_total_crime = homicide_data %>%
+        group_by(city_state) %>%
+        summarise(city_total = n()) 
+
+homicide_unsolved = homicide_data %>%
+        filter(disposition %in% c ("Closed without arrest", "Open/No arrest")) %>%
+        group_by(city_state)  %>%
+        summarise(unsolved = n())
+# merge two table
+left_join(homicide_total_crime, homicide_unsolved, by = "city_state")
+
+```
+
