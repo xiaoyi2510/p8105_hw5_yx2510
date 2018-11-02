@@ -1,0 +1,49 @@
+---
+title: "Yx2510_p8105_hw5"
+author: "Yi Xiao"
+date: "02/11/2018"
+output: github_document
+---
+Load the packages 
+```{r}
+library(tidyverse)
+```
+## Problem one:
+Read the file:
+1. Start with a dataframe containing all file names
+```{r}
+
+name = list.files(path = "./data", full.names = TRUE) %>% 
+        as.data.frame()
+        colnames(name) = "subject"
+
+```
+2. Iterate over file names and read in data for each subject using purrr::map and saving the result as a new variable in the dataframe
+```{r}
+data =  map(as.character(name$subject), read_csv) 
+data_combi = data[[1]]
+for (i in 2:20) {
+data_combi = rbind(data_combi, data[[i]])
+}
+my_data = cbind(name, data_combi)
+```
+
+3. Tidy the data
+```{r}
+ my_tidy_data = my_data %>%
+        gather(key = week, value = value, week_1 : week_8) %>%
+        mutate(subject = str_replace(subject, "./data/", ""),
+               subject = str_replace(subject, ".csv", ""),
+               week = str_replace(week, "week_", "")) %>%
+        separate(subject, into = c("group", "subject_id"), sep = "_")
+
+        
+```
+
+4. Make a spaghetti plot showing observations on each subject over time, and comment on differences between groups.
+
+```{r}
+my_tidy_data %>%
+        gglpot(aes(x = as.factor()))
+```
+
