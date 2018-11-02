@@ -44,6 +44,14 @@ my_data = cbind(name, data_combi)
 
 ```{r}
 my_tidy_data %>%
-        gglpot(aes(x = as.factor()))
+        ggplot(aes(x = as.numeric(week), y = value)) +
+        facet_grid(~ as.factor(group)) +
+        geom_line(aes(color = subject_id)) +
+        labs(x = "Week",
+             y = "Value",
+             title = "Value of each subject over 8 weeks by group") +
+        theme(legend.position = "bottom")
+        
 ```
 
+Comment: The week-one value ranged from 0.0 to 2.5. A slightly wider range was observed in the experiment group which fell between -1.0 to 3.725. However, the value in the control arm fluctuated arond this range for the following 8 weeks. Meanwhile, an overall increasing trend can be observed for the experimental group.
