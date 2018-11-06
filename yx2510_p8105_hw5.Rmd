@@ -21,7 +21,7 @@ name = list.files(path = "./data", full.names = TRUE) %>%
 
 ```
 #### 2. Iterate over file names and read in data for each subject using purrr::map and saving the result as a new variable in the dataframe
-```{r}
+```{r message = FALSE}
 data =  map(as.character(name$subject), read_csv) 
 data_combi = data[[1]]
 for (i in 2:20) {
