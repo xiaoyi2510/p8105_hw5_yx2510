@@ -121,13 +121,27 @@ unsolved_prop = function(x) {
 I first wrote a function taking the name of dataset as input and then runs `prop.test` using `unsolved` and `city_total` variables. The result is then get tidied up using `broom::tidy` and three variables are then selected to present. 
 
 ```{r}
-prop_homicide = homicide_crime %>% 
-	nest(city_state, city_total:unsolved) %>%
-	mutate(prop = map(.x = data,
-												 function(x) {
-												 	broom::tidy(prop.test(x$unsolved, x$city_total))
-												 	})) %>% 
-	unnest() %>% 
-	select(city_state, estimate, conf.low, conf.high)
+unsolved_prop_data = nest(all_cases, unsolved:city_total) %>%
+        mutate(unsolved_proportion = map(data, unsolved_prop)) %>% 
+        unnest() %>%
+        rename("conf_low" = conf.low,
+               "conf_high" = conf.high,
+               "unsolved_estimate" = estimate)      
 ```
+I used `nest` to create a column named data which is actually a list with unsolved and city_total nested inside. Then I used `map` to iterate over the column and add a variable named `unsolved proportion` to record the proportion  of unsolved cases across 50 cities and their lower and higher confidence interval. 
+
+5. make a plot
+```{r}
+unsolved_prop_data %>%
+        mutate(city_state = fct_reorder(city_state, unsolved_estimate)) %>%
+        ggplot(aes(x = city_state, y = unsolved_estimate)) +
+        geom_point() +
+        geom_errorbar(aes(ymin = conf_low, ymax = conf_high)) +
+        coord_flip() +
+        labs(title = "Proportion of Unsolved Cases Across 50 US Cities",
+             x = "City",
+             y = "Proportion of Unsolved Cases",
+             Caption = "Error bars indicates 95% confidence interval")
+```
+The resulting plots showed the proption of unsolved cases in a descending order with their corresponding confidence interval. Chicago has the highest proportion of unsolved cases while Richmond has the lowest. 
 
