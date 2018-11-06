@@ -143,5 +143,6 @@ unsolved_prop_data %>%
              y = "Proportion of Unsolved Cases",
              Caption = "Error bars indicates 95% confidence interval")
 ```
+
 The resulting plots showed the proption of unsolved cases in a descending order with their corresponding confidence interval. Chicago has the highest proportion of unsolved cases while Richmond has the lowest. 
 
