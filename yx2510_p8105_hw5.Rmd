@@ -8,6 +8,7 @@ Load the packages
 ```{r}
 library(tidyverse)
 library(ggplot2)
+library(viridis)
 ```
 ## Problem one:
 Read the file:
@@ -40,6 +41,9 @@ my_data = cbind(name, data_combi)
 
         
 ```
+To import the separate 20 files, I first used `list.files` with `full.name` being `TRUE`. Then I created a dataframe containing all of those names and used `map` to iterate over the filenames and saved the results in a list named `data`. Each observation in the list was extracted and combined those recordings using `rbind` and add the subject id in front using `rbind`. 
+
+In the data tidying phase, I gathered the observation from week 1 to 8 under "week" variable and separate all subjects into control and experimental arms. In the final dataset I generated, there are `r nrow(my_tidy_data)`observations and `ncol(my_tidy_data)` columns. Variables includes group, subject id, week and value.
 
 4. Make a spaghetti plot showing observations on each subject over time, and comment on differences between groups.
 
@@ -50,34 +54,80 @@ my_tidy_data %>%
         geom_line(aes(color = subject_id)) +
         labs(x = "Week",
              y = "Value",
-             title = "Value of each subject over 8 weeks by group") +
-        theme(legend.position = "bottom")
+             title = "Trends in observations over 8 weeks for each participant stratified by study arm") +
+        theme(legend.position = "bottom") +
+        viridis::scale_color_viridis(name = "Week",
+                               discrete = TRUE)  
         
 ```
 
-Comment: The week-one value ranged from 0.0 to 2.5. A slightly wider range was observed in the experiment group which fell between -1.0 to 3.725. However, the value in the control arm fluctuated arond this range for the following 8 weeks. Meanwhile, an overall increasing trend can be observed for the experimental group.
+Comment: The week-one value ranged from 0.0 to 2.5. A slightly wider range was observed in the experiment group which fell between -1.0 to 3.725. However, the value in the control arm remained stable arond this range for the following 8 weeks. Meanwhile, an overall increasing trend can be observed for the experimental group.
 
 
 ## Problem 2:
 1. read the data and create city_state variable
 ```{r}
 homicide_data = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>%
+        janitor::clean_names() %>%
         unite(col = "city_state", city:state, sep = ", ", remove = FALSE)
 ```
-The data contains 'r nrow(homicide_data)' and 'r ncol(homicide_data)'. Variables include name, race, age and sex of victims, city, state and location of crime, and also disposition of cases. 
+The data contains information on homicides across 50 US cities from 2007 to 2015. There are 'r nrow(homicide_data)' recordings and 'r ncol(homicide_data)' columns. Variables include name, race, age and sex of victims, city, state and location of crime, and also disposition of cases. 
 
 2. summarize within cities to obtain the total number of homicides and the number of unsolved homicides
 ```{r}
+# total case in a city
 homicide_total_crime = homicide_data %>%
         group_by(city_state) %>%
         summarise(city_total = n()) 
-
+# unsolved case in a city 
 homicide_unsolved = homicide_data %>%
         filter(disposition %in% c ("Closed without arrest", "Open/No arrest")) %>%
         group_by(city_state)  %>%
         summarise(unsolved = n())
-# merge two table
-left_join(homicide_total_crime, homicide_unsolved, by = "city_state")
 
+# merge two table
+all_cases = left_join(homicide_unsolved, homicide_total_crime, by = "city_state")
+
+```
+I first created two separate datasets containing the number of total cases and unsolved cases in each city. Then I joined the two datasets on `city_state` and save the result in `all_cases`.
+
+3. data for Baltimore, MD
+```{r}
+ baltimore_data = all_cases %>%
+        filter(city_state == "Baltimore, MD")
+
+broom::tidy(
+        prop.test(baltimore_data$unsolved, baltimore_data$city_total)
+) %>%
+        select(estimate, conf.low, conf.high) %>%
+        mutate(estimate = round(estimate, 4),
+               conf.low = round(conf.low, 4),
+               conf.high = round(conf.high, 4)) %>%
+        rename("Estimate"= estimate, 
+               "Lower Bound" = conf.low,
+                "Upper Bound" = conf.high) %>%
+        knitr::kable()
+        
+```
+
+4. calculate the proportion for each city
+```{r}
+unsolved_prop = function(x) {
+        broom::tidy(prop.test(x$unsolved, x$city_total)) %>%
+        select(estimate, conf.low, conf.high)
+}
+  
+```
+I first wrote a function taking the name of dataset as input and then runs `prop.test` using `unsolved` and `city_total` variables. The result is then get tidied up using `broom::tidy` and three variables are then selected to present. 
+
+```{r}
+prop_homicide = homicide_crime %>% 
+	nest(city_state, city_total:unsolved) %>%
+	mutate(prop = map(.x = data,
+												 function(x) {
+												 	broom::tidy(prop.test(x$unsolved, x$city_total))
+												 	})) %>% 
+	unnest() %>% 
+	select(city_state, estimate, conf.low, conf.high)
 ```
 
