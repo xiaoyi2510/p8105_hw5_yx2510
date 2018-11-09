@@ -22,12 +22,9 @@ name = list.files(path = "./data", full.names = TRUE) %>%
 ```
 #### 2. Iterate over file names and read in data for each subject using purrr::map and saving the result as a new variable in the dataframe
 ```{r message = FALSE}
-data =  map(as.character(name$subject), read_csv) 
-data_combi = data[[1]]
-for (i in 2:20) {
-data_combi = rbind(data_combi, data[[i]])
-}
-my_data = cbind(name, data_combi)
+data =  map_df(as.character(name$subject), read_csv) 
+
+my_data = cbind(name, data)
 ```
 
 #### 3. Tidy the data
@@ -43,7 +40,7 @@ my_data = cbind(name, data_combi)
 ```
 To import the separate 20 files, I first used `list.files` with `full.name` being `TRUE`. Then I created a dataframe containing all of those names and used `map` to iterate over the filenames and saved the results in a list named `data`. Each observation in the list was extracted and combined those recordings using `rbind` and add the subject id in front using `rbind`. 
 
-In the data tidying phase, I gathered the observation from week 1 to 8 under "week" variable and separate all subjects into control and experimental arms. In the final dataset I generated, there are `r nrow(my_tidy_data)`observations and `ncol(my_tidy_data)` columns. Variables includes group, subject id, week and value.
+In the data tidying phase, I gathered the observation from week 1 to 8 under "week" variable and separate all subjects into control and experimental arms. In the final dataset I generated, there are `r nrow(my_tidy_data)` observations and `r ncol(my_tidy_data)` columns. Variables includes group, subject id, week and value.
 
 #### 4. Make a spaghetti plot showing observations on each subject over time, and comment on differences between groups.
 
@@ -126,7 +123,9 @@ unsolved_prop_data = nest(all_cases, unsolved:city_total) %>%
         unnest() %>%
         rename("conf_low" = conf.low,
                "conf_high" = conf.high,
-               "unsolved_estimate" = estimate)      
+               "unsolved_estimate" = estimate) 
+
+
 ```
 I used `nest` to create a column named data which is actually a list with unsolved and city_total nested inside. Then I used `map` to iterate over the column and add a variable named `unsolved proportion` to record the proportion  of unsolved cases across 50 cities and their lower and higher confidence interval. 
 
